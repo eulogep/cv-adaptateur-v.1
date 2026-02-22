@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MatchCV — Architecture 100% Gratuite</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0A0A0F;
+    --surface: #111118;
+    --surface2: #18181F;
+    --accent: #6EE7B7;
+    --accent2: #818CF8;
+    --accent3: #F472B6;
+    --warn: #FBBF24;
+    --text: #F0F0F5;
+    --muted: #888899;
+    --border: rgba(255,255,255,0.07);
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 15px; line-height: 1.7; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events: none; z-index: 1000; opacity: 0.4; }
+  .glow { position: fixed; border-radius: 50%; filter: blur(120px); pointer-events: none; z-index: 0; }
+  .glow-1 { width: 500px; height: 500px; background: rgba(110,231,183,0.07); top: -100px; right: -100px; }
+  .glow-2 { width: 400px; height: 400px; background: rgba(129,140,248,0.06); bottom: 200px; left: -100px; }
+  .container { max-width: 980px; margin: 0 auto; padding: 0 32px; position: relative; z-index: 1; }
+  header { padding: 40px 0 0; }
+  .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 22px; letter-spacing: -0.5px; }
+  .logo span { color: var(--accent); }
+  .hero { padding: 80px 0 60px; }
+  .badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(110,231,183,0.08); border: 1px solid rgba(110,231,183,0.2); color: var(--accent); padding: 6px 14px; border-radius: 100px; font-size: 12px; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 28px; }
+  .badge::before { content: '●'; font-size: 8px; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+  h1 { font-family: 'Syne', sans-serif; font-size: clamp(34px, 5.5vw, 54px); font-weight: 800; line-height: 1.1; letter-spacing: -2px; margin-bottom: 20px; }
+  h1 .hl-green { color: var(--accent); }
+  h1 .hl-purple { color: var(--accent2); }
+  .hero-sub { font-size: 17px; color: var(--muted); max-width: 580px; font-weight: 300; margin-bottom: 48px; line-height: 1.8; }
+  .section { padding: 64px 0; border-top: 1px solid var(--border); }
+  .section-label { font-family: 'Syne', sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 3px; color: var(--muted); margin-bottom: 32px; }
+  h2 { font-family: 'Syne', sans-serif; font-size: 28px; font-weight: 700; letter-spacing: -0.8px; margin-bottom: 12px; }
+
+  /* ALERT BANNER */
+  .alert {
+    background: rgba(251,191,36,0.07);
+    border: 1px solid rgba(251,191,36,0.25);
+    border-left: 3px solid var(--warn);
+    border-radius: 12px;
+    padding: 16px 20px;
+    margin-top: 24px;
+    font-size: 13.5px;
+    color: #E5C882;
+  }
+  .alert strong { color: var(--warn); }
+
+  /* MODEL CARDS */
+  .models-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 32px; }
+  .model-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; transition: border-color 0.2s; }
+  .model-card:hover { border-color: rgba(255,255,255,0.14); }
+  .model-card.primary { border-color: rgba(110,231,183,0.25); background: rgba(110,231,183,0.02); }
+  .model-card.secondary { border-color: rgba(129,140,248,0.2); }
+  .model-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+  .model-name { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; }
+  .model-badge { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; padding: 3px 9px; border-radius: 6px; }
+  .badge-free { background: rgba(110,231,183,0.12); color: var(--accent); }
+  .badge-local { background: rgba(251,191,36,0.12); color: var(--warn); }
+  .badge-backup { background: rgba(129,140,248,0.12); color: var(--accent2); }
+  .model-desc { font-size: 13px; color: var(--muted); margin-bottom: 14px; line-height: 1.6; }
+  .model-stats { display: flex; gap: 16px; flex-wrap: wrap; }
+  .stat { font-size: 12px; }
+  .stat .label { color: var(--muted); display: block; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat .value { color: var(--accent); font-weight: 600; font-family: 'Syne', sans-serif; }
+  .stat.purple .value { color: var(--accent2); }
+  .stat.warn .value { color: var(--warn); }
+
+  /* COMPARATIF TABLE */
+  .compare-table { width: 100%; border-collapse: collapse; margin-top: 28px; font-size: 13px; }
+  .compare-table th { text-align: left; padding: 10px 14px; background: var(--surface2); color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 500; }
+  .compare-table th:first-child { border-radius: 8px 0 0 8px; }
+  .compare-table th:last-child { border-radius: 0 8px 8px 0; }
+  .compare-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  .compare-table tr:last-child td { border-bottom: none; }
+  .compare-table tr:hover td { background: rgba(255,255,255,0.015); }
+  .compare-table .provider { font-weight: 600; color: var(--text); }
+  .compare-table .model { font-family: 'Courier New', monospace; font-size: 11.5px; color: var(--accent2); }
+  .tag-recommande { background: rgba(110,231,183,0.12); color: var(--accent); font-size: 10px; padding: 2px 8px; border-radius: 4px; font-weight: 700; }
+  .tag-backup { background: rgba(129,140,248,0.1); color: var(--accent2); font-size: 10px; padding: 2px 8px; border-radius: 4px; }
+  .tag-local { background: rgba(251,191,36,0.1); color: var(--warn); font-size: 10px; padding: 2px 8px; border-radius: 4px; }
+
+  /* STACK */
+  .stack-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 32px; }
+  .stack-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+  .stack-card h3 { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 6px; }
+  .stack-card p { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+  .tech-list { list-style: none; }
+  .tech-list li { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #CCC; padding: 5px 0; border-bottom: 1px solid var(--border); }
+  .tech-list li:last-child { border-bottom: none; }
+  .tech-list li::before { content: '—'; color: var(--accent); font-size: 11px; }
+
+  /* ARCHI FLOW */
+  .archi { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 32px; margin-top: 32px; }
+  .flow { display: flex; align-items: center; gap: 0; flex-wrap: wrap; row-gap: 12px; }
+  .flow-box { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 16px; font-size: 12px; font-weight: 500; text-align: center; min-width: 90px; }
+  .flow-box.green { border-color: rgba(110,231,183,0.3); color: var(--accent); }
+  .flow-box.purple { border-color: rgba(129,140,248,0.3); color: var(--accent2); }
+  .flow-box.pink { border-color: rgba(244,114,182,0.3); color: var(--accent3); }
+  .flow-box.warn { border-color: rgba(251,191,36,0.3); color: var(--warn); }
+  .arrow { color: var(--muted); font-size: 18px; padding: 0 8px; flex-shrink: 0; }
+
+  /* CODE BLOCK */
+  .code-block { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: 12px; padding: 24px; margin-top: 20px; }
+  .code-block pre { font-family: 'Courier New', monospace; font-size: 12px; color: #A8B5A0; white-space: pre-wrap; line-height: 1.9; }
+  .code-block pre .k { color: var(--accent); font-weight: bold; }
+  .code-block pre .s { color: #F9A8D4; }
+  .code-block pre .c { color: var(--muted); }
+  .code-block pre .v { color: var(--accent2); }
+  .code-block .label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--muted); margin-bottom: 12px; font-family: 'Syne', sans-serif; }
+
+  /* ROADMAP */
+  .roadmap { margin-top: 32px; }
+  .phase { display: grid; grid-template-columns: 150px 1fr; gap: 24px; padding: 28px 0; border-bottom: 1px solid var(--border); }
+  .phase:last-child { border-bottom: none; }
+  .phase-tag { display: inline-block; font-family: 'Syne', sans-serif; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 4px 10px; border-radius: 6px; margin-bottom: 8px; }
+  .tag-v1 { background: rgba(110,231,183,0.1); color: var(--accent); }
+  .tag-v2 { background: rgba(129,140,248,0.1); color: var(--accent2); }
+  .tag-v3 { background: rgba(244,114,182,0.1); color: var(--accent3); }
+  .phase-duration { font-size: 12px; color: var(--muted); }
+  .phase-content h3 { font-family: 'Syne', sans-serif; font-size: 17px; font-weight: 700; margin-bottom: 10px; letter-spacing: -0.3px; }
+  .feature-list { list-style: none; }
+  .feature-list li { display: flex; align-items: flex-start; gap: 10px; font-size: 13.5px; color: #CCC; padding: 5px 0; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-top: 7px; flex-shrink: 0; }
+
+  /* PLANS */
+  .plans { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 32px; }
+  .plan-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; }
+  .plan-card.featured { border-color: rgba(110,231,183,0.3); background: rgba(110,231,183,0.02); }
+  .plan-name { font-family: 'Syne', sans-serif; font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+  .plan-price { font-family: 'Syne', sans-serif; font-size: 32px; font-weight: 800; letter-spacing: -1px; margin-bottom: 4px; }
+  .plan-price span { font-size: 14px; font-weight: 400; color: var(--muted); }
+  .plan-desc { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+  .plan-features { list-style: none; }
+  .plan-features li { font-size: 12.5px; color: #CCC; padding: 5px 0; display: flex; gap: 8px; align-items: flex-start; border-bottom: 1px solid var(--border); }
+  .plan-features li:last-child { border-bottom: none; }
+  .plan-features li::before { content: '✓'; color: var(--accent); font-size: 11px; margin-top: 2px; }
+
+  footer { padding: 48px 0; border-top: 1px solid var(--border); text-align: center; color: var(--muted); font-size: 13px; }
+
+  @media (max-width: 640px) {
+    .models-grid, .stack-grid, .plans { grid-template-columns: 1fr; }
+    .phase { grid-template-columns: 1fr; gap: 8px; }
+    .flow { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="glow glow-1"></div>
+<div class="glow glow-2"></div>
+<div class="container">
+
+  <header>
+    <div class="logo">Match<span>CV</span></div>
+  </header>
+
+  <section class="hero">
+    <div class="badge">100% Gratuit — Zéro API payante</div>
+    <h1>Architecture <span class="hl-green">Open Source</span><br>& <span class="hl-purple">Gratuite</span></h1>
+    <p class="hero-sub">Plateforme d'adaptation IA de CV, construite entièrement avec des modèles open source et des tiers gratuits. Aucune carte bancaire, aucun abonnement API requis.</p>
+  </section>
+
+  <!-- MODÈLES -->
+  <section class="section">
+    <div class="section-label">Cerveau de la plateforme</div>
+    <h2>Modèles & Providers gratuits</h2>
+    <p style="color:var(--muted); font-size:14px;">Stratégie à 3 niveaux : provider principal → backup → local.</p>
+
+    <div class="alert">
+      <strong>⚠️ Attention HuggingFace :</strong> L'API serverless HF est désormais limitée à de petits crédits mensuels et orientée surtout vers les modèles CPU légers. Ne pas l'utiliser comme LLM principal — utiliser Groq ou Mistral à la place.
+    </div>
+
+    <div class="models-grid" style="margin-top:28px;">
+
+      <div class="model-card primary">
+        <div class="model-header">
+          <div class="model-name">🚀 Groq</div>
+          <span class="model-badge badge-free">Principal</span>
+        </div>
+        <div class="model-desc">Le plus rapide des providers gratuits. Llama 3.3 70B tourne à plus de 500 tokens/seconde. API compatible OpenAI, zéro carte bancaire.</div>
+        <div class="model-stats">
+          <div class="stat"><span class="label">Requêtes/jour</span><span class="value">14 400</span></div>
+          <div class="stat"><span class="label">Modèle recommandé</span><span class="value" style="font-size:11px;">llama-3.3-70b-versatile</span></div>
+          <div class="stat"><span class="label">Carte bancaire</span><span class="value">Non ❌</span></div>
+        </div>
+      </div>
+
+      <div class="model-card secondary">
+        <div class="model-header">
+          <div class="model-name">🧩 Mistral AI</div>
+          <span class="model-badge badge-backup">Backup vol.</span>
+        </div>
+        <div class="model-desc">1 milliard de tokens/mois gratuits. Excellent en français. Idéal comme backup si les limites Groq sont atteintes en fin de journée.</div>
+        <div class="model-stats">
+          <div class="stat purple"><span class="label">Tokens/mois</span><span class="value">1 milliard</span></div>
+          <div class="stat purple"><span class="label">Modèle recommandé</span><span class="value" style="font-size:11px;">mistral-small-latest</span></div>
+          <div class="stat purple"><span class="label">Carte bancaire</span><span class="value">Non ❌</span></div>
+        </div>
+      </div>
+
+      <div class="model-card">
+        <div class="model-header">
+          <div class="model-name">🌐 OpenRouter</div>
+          <span class="model-badge badge-backup">Backup modèles</span>
+        </div>
+        <div class="model-desc">30+ modèles gratuits accessibles via une seule API. Utile pour expérimenter ou basculer rapidement si un provider est down.</div>
+        <div class="model-stats">
+          <div class="stat"><span class="label">Modèles gratuits</span><span class="value">30+</span></div>
+          <div class="stat"><span class="label">Modèle recommandé</span><span class="value" style="font-size:11px;">llama-3.1-8b:free</span></div>
+          <div class="stat"><span class="label">Carte bancaire</span><span class="value">Non ❌</span></div>
+        </div>
+      </div>
+
+      <div class="model-card">
+        <div class="model-header">
+          <div class="model-name">💻 Ollama (local)</div>
+          <span class="model-badge badge-local">100% local</span>
+        </div>
+        <div class="model-desc">Tourne sur ton PC. Zéro limite, zéro coût, zéro dépendance réseau. Idéal pour le développement et les tests intensifs.</div>
+        <div class="model-stats">
+          <div class="stat warn"><span class="label">Coût</span><span class="value">0€ total</span></div>
+          <div class="stat warn"><span class="label">Modèle recommandé</span><span class="value" style="font-size:11px;">mistral:7b-instruct</span></div>
+          <div class="stat warn"><span class="label">Limite</span><span class="value">Aucune ✅</span></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- COMPARATIF -->
+    <table class="compare-table" style="margin-top:32px;">
+      <thead>
+        <tr>
+          <th>Provider</th>
+          <th>Modèle</th>
+          <th>Limite gratuite</th>
+          <th>Vitesse</th>
+          <th>Français</th>
+          <th>Usage</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="provider">Groq</td>
+          <td class="model">llama-3.3-70b-versatile</td>
+          <td>14 400 req/jour</td>
+          <td>⚡ Très rapide</td>
+          <td>⭐⭐⭐</td>
+          <td><span class="tag-recommande">Principal</span></td>
+        </tr>
+        <tr>
+          <td class="provider">Mistral AI</td>
+          <td class="model">mistral-small-latest</td>
+          <td>1B tokens/mois</td>
+          <td>🟡 Moyen</td>
+          <td>⭐⭐⭐⭐</td>
+          <td><span class="tag-backup">Backup vol.</span></td>
+        </tr>
+        <tr>
+          <td class="provider">OpenRouter</td>
+          <td class="model">llama-3.1-8b:free</td>
+          <td>Variable</td>
+          <td>🟡 Moyen</td>
+          <td>⭐⭐⭐</td>
+          <td><span class="tag-backup">Backup modèle</span></td>
+        </tr>
+        <tr>
+          <td class="provider">Ollama</td>
+          <td class="model">mistral:7b-instruct</td>
+          <td>Illimitée (local)</td>
+          <td>🔵 Dépend CPU</td>
+          <td>⭐⭐⭐</td>
+          <td><span class="tag-local">Dev / tests</span></td>
+        </tr>
+        <tr>
+          <td class="provider">HuggingFace</td>
+          <td class="model">all-MiniLM-L6-v2</td>
+          <td>Crédits limités</td>
+          <td>🟢 Rapide</td>
+          <td>⭐⭐</td>
+          <td><span class="tag-backup">Embeddings seulement</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- STACK -->
+  <section class="section">
+    <div class="section-label">Stack technique complète</div>
+    <h2>Toutes les briques, toutes gratuites</h2>
+
+    <div class="stack-grid">
+      <div class="stack-card">
+        <h3>⚡ Frontend Web</h3>
+        <p>Interface React responsive, déployée gratuitement.</p>
+        <ul class="tech-list">
+          <li>React + Vite</li>
+          <li>TailwindCSS</li>
+          <li>Framer Motion (animations)</li>
+          <li>@react-pdf/renderer (rendu CV)</li>
+          <li>Vercel (hébergement gratuit)</li>
+        </ul>
+      </div>
+      <div class="stack-card">
+        <h3>🧠 Backend IA</h3>
+        <p>FastAPI Python, branché sur les LLMs gratuits.</p>
+        <ul class="tech-list">
+          <li>FastAPI + Uvicorn</li>
+          <li>Groq SDK (LLM principal)</li>
+          <li>mistralai SDK (backup)</li>
+          <li>PyMuPDF (parsing PDF CV)</li>
+          <li>Railway.app (gratuit 500h/mois)</li>
+        </ul>
+      </div>
+      <div class="stack-card">
+        <h3>📊 Score ATS (100% local)</h3>
+        <p>Calcul de similarité sémantique sans aucun appel API.</p>
+        <ul class="tech-list">
+          <li>sentence-transformers (pip)</li>
+          <li>Modèle : all-MiniLM-L6-v2 (80MB)</li>
+          <li>Tourne en local, 0 coût</li>
+          <li>Score cosinus CV ↔ offre</li>
+        </ul>
+      </div>
+      <div class="stack-card">
+        <h3>🔧 No-code & Services</h3>
+        <p>Les parties non critiques sans une ligne de code.</p>
+        <ul class="tech-list">
+          <li>Supabase (BDD + auth gratuits)</li>
+          <li>Make.com (emails, notifications)</li>
+          <li>Stripe (paiements freemium)</li>
+          <li>Loops.so (emails transactionnels)</li>
+        </ul>
+      </div>
+      <div class="stack-card">
+        <h3>📱 Mobile</h3>
+        <p>Même codebase web transformé en app native.</p>
+        <ul class="tech-list">
+          <li>Capacitor.js (web → iOS/Android)</li>
+          <li>Design responsive-first</li>
+          <li>Share API (partage PDF natif)</li>
+          <li>Upload photo CV (galerie/camera)</li>
+        </ul>
+      </div>
+      <div class="stack-card">
+        <h3>🧪 Dev & Tests</h3>
+        <p>Environnement de développement 100% local.</p>
+        <ul class="tech-list">
+          <li>Ollama (LLM local illimité)</li>
+          <li>ollama pull mistral:7b-instruct</li>
+          <li>Même API que Groq/Mistral</li>
+          <li>Zéro coût pendant le dev</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- FLOW -->
+  <section class="section">
+    <div class="section-label">Flux de données</div>
+    <h2>Architecture bout en bout</h2>
+    <div class="archi">
+      <p style="font-size:12px; color:var(--muted); margin-bottom:24px;">Chaque étape, chaque outil, chaque coût.</p>
+
+      <div style="margin-bottom:24px;">
+        <p style="font-size:11px; color:var(--muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:1px;">Input utilisateur</p>
+        <div class="flow">
+          <div class="flow-box green">Upload CV PDF</div>
+          <div class="arrow">+</div>
+          <div class="flow-box green">Coller offre texte</div>
+          <div class="arrow">→</div>
+          <div class="flow-box warn">PyMuPDF parsing</div>
+          <div class="arrow">→</div>
+          <div class="flow-box">CV en JSON structuré</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:24px;">
+        <p style="font-size:11px; color:var(--muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:1px;">Score ATS (local, gratuit)</p>
+        <div class="flow">
+          <div class="flow-box">CV JSON</div>
+          <div class="arrow">+</div>
+          <div class="flow-box">Offre texte</div>
+          <div class="arrow">→</div>
+          <div class="flow-box warn">sentence-transformers local</div>
+          <div class="arrow">→</div>
+          <div class="flow-box warn">Score 0-100%</div>
+        </div>
+      </div>
+
+      <div style="margin-bottom:24px;">
+        <p style="font-size:11px; color:var(--muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:1px;">Adaptation IA (Groq gratuit)</p>
+        <div class="flow">
+          <div class="flow-box">CV JSON + Score</div>
+          <div class="arrow">→</div>
+          <div class="flow-box purple">Groq API (Llama 3.3 70B)</div>
+          <div class="arrow">→</div>
+          <div class="flow-box purple">CV adapté JSON + LM</div>
+        </div>
+      </div>
+
+      <div>
+        <p style="font-size:11px; color:var(--muted); margin-bottom:10px; text-transform:uppercase; letter-spacing:1px;">Output final</p>
+        <div class="flow">
+          <div class="flow-box purple">JSON structuré</div>
+          <div class="arrow">→</div>
+          <div class="flow-box pink">React PDF renderer</div>
+          <div class="arrow">→</div>
+          <div class="flow-box pink">Export CV PDF</div>
+          <div class="arrow">+</div>
+          <div class="flow-box pink">Export LM .docx</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CODE -->
+  <section class="section">
+    <div class="section-label">Code de démarrage</div>
+    <h2>Les blocs essentiels</h2>
+
+    <div class="code-block">
+      <div class="label">Installation</div>
+      <pre><span class="c"># Backend Python</span>
+pip install fastapi uvicorn groq mistralai pymupdf sentence-transformers python-dotenv
+
+<span class="c"># Frontend React</span>
+npm create vite@latest matchcv -- --template react
+cd matchcv && npm install tailwindcss @react-pdf/renderer
+
+<span class="c"># Dev local (LLM illimité)</span>
+curl -fsSL https://ollama.com/install.sh | sh
+ollama pull mistral:7b-instruct</pre>
+    </div>
+
+    <div class="code-block" style="border-left-color: var(--accent2); margin-top:16px;">
+      <div class="label">Appel LLM avec fallback automatique</div>
+      <pre><span class="k">import</span> os
+<span class="k">from</span> groq <span class="k">import</span> Groq
+<span class="k">from</span> mistralai <span class="k">import</span> Mistral
+
+<span class="c"># Stratégie : Groq principal → Mistral backup → Ollama local</span>
+<span class="k">def</span> <span class="v">call_llm</span>(prompt: str, cv_json: str, offre: str) -> dict:
+    providers = [
+        {<span class="s">"name"</span>: <span class="s">"groq"</span>, <span class="s">"model"</span>: <span class="s">"llama-3.3-70b-versatile"</span>},
+        {<span class="s">"name"</span>: <span class="s">"mistral"</span>, <span class="s">"model"</span>: <span class="s">"mistral-small-latest"</span>},
+        {<span class="s">"name"</span>: <span class="s">"ollama"</span>, <span class="s">"model"</span>: <span class="s">"mistral:7b-instruct"</span>},
+    ]
+    
+    <span class="k">for</span> provider <span class="k">in</span> providers:
+        <span class="k">try</span>:
+            <span class="k">if</span> provider[<span class="s">"name"</span>] == <span class="s">"groq"</span>:
+                client = Groq(api_key=os.getenv(<span class="s">"GROQ_API_KEY"</span>))
+                response = client.chat.completions.create(
+                    model=provider[<span class="s">"model"</span>],
+                    messages=[
+                        {<span class="s">"role"</span>: <span class="s">"system"</span>, <span class="s">"content"</span>: SYSTEM_PROMPT},
+                        {<span class="s">"role"</span>: <span class="s">"user"</span>, <span class="s">"content"</span>: f<span class="s">"[OFFRE]{offre}[CV]{cv_json}"</span>}
+                    ],
+                    temperature=0.2, max_tokens=3500
+                )
+                <span class="k">return</span> json.loads(response.choices[0].message.content)
+                
+        <span class="k">except</span> Exception <span class="k">as</span> e:
+            print(f<span class="s">"Provider {provider['name']} failed: {e}, trying next..."</span>)
+            <span class="k">continue</span>
+    
+    <span class="k">raise</span> Exception(<span class="s">"Tous les providers sont indisponibles"</span>)</pre>
+    </div>
+
+    <div class="code-block" style="border-left-color: var(--warn); margin-top:16px;">
+      <div class="label">Score ATS local (sentence-transformers)</div>
+      <pre><span class="k">from</span> sentence_transformers <span class="k">import</span> SentenceTransformer, util
+
+<span class="c"># Chargé une seule fois au démarrage du serveur</span>
+model = SentenceTransformer(<span class="s">'all-MiniLM-L6-v2'</span>)  <span class="c"># 80MB, local</span>
+
+<span class="k">def</span> <span class="v">compute_ats_score</span>(cv_text: str, offre_text: str) -> int:
+    embeddings = model.encode([cv_text, offre_text], convert_to_tensor=True)
+    cosine_score = util.cos_sim(embeddings[0], embeddings[1])
+    <span class="k">return</span> int(cosine_score.item() * 100)  <span class="c"># Ex: 73</span></pre>
+    </div>
+  </section>
+
+  <!-- ROADMAP -->
+  <section class="section">
+    <div class="section-label">Plan de développement</div>
+    <h2>Roadmap</h2>
+    <div class="roadmap">
+
+      <div class="phase">
+        <div>
+          <div class="phase-tag tag-v1">V1 — MVP</div>
+          <div class="phase-duration">4–5 semaines</div>
+        </div>
+        <div class="phase-content">
+          <h3>Plateforme fonctionnelle gratuite</h3>
+          <ul class="feature-list">
+            <li><div class="dot"></div>Interface web : coller offre + coller CV texte</li>
+            <li><div class="dot"></div>Score ATS local via sentence-transformers</li>
+            <li><div class="dot"></div>Adaptation CV + LM via Groq (Llama 3.3 70B) avec fallback Mistral</li>
+            <li><div class="dot"></div>Export PDF du CV adapté (@react-pdf)</li>
+            <li><div class="dot"></div>Auth Supabase (email / Google)</li>
+            <li><div class="dot"></div>Déploiement Vercel + Railway</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div>
+          <div class="phase-tag tag-v2">V2</div>
+          <div class="phase-duration">+4 semaines</div>
+        </div>
+        <div class="phase-content">
+          <h3>Upload PDF + Mobile + Freemium</h3>
+          <ul class="feature-list">
+            <li><div class="dot" style="background:var(--accent2)"></div>Upload CV PDF avec parsing automatique (PyMuPDF)</li>
+            <li><div class="dot" style="background:var(--accent2)"></div>3 templates CV (design pro)</li>
+            <li><div class="dot" style="background:var(--accent2)"></div>Historique candidatures (Supabase)</li>
+            <li><div class="dot" style="background:var(--accent2)"></div>Application mobile (Capacitor.js)</li>
+            <li><div class="dot" style="background:var(--accent2)"></div>Mode freemium + Stripe (3 CV gratuits/mois)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="phase">
+        <div>
+          <div class="phase-tag tag-v3">V3</div>
+          <div class="phase-duration">+5 semaines</div>
+        </div>
+        <div class="phase-content">
+          <h3>Fonctionnalités avancées</h3>
+          <ul class="feature-list">
+            <li><div class="dot" style="background:var(--accent3)"></div>Scraping URL offre (pas besoin de coller le texte)</li>
+            <li><div class="dot" style="background:var(--accent3)"></div>Suggestions IA : compétences manquantes à développer</li>
+            <li><div class="dot" style="background:var(--accent3)"></div>Dashboard candidatures (suivi, relances)</li>
+            <li><div class="dot" style="background:var(--accent3)"></div>Multi-langues FR / EN</li>
+            <li><div class="dot" style="background:var(--accent3)"></div>Import LinkedIn (profil → CV auto)</li>
+          </ul>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- PLANS -->
+  <section class="section">
+    <div class="section-label">Business model</div>
+    <h2>Freemium — Coût infrastructure ≈ 0€</h2>
+    <p style="color:var(--muted); font-size:14px; margin-bottom:0;">Avec Groq + Mistral gratuits, chaque adaptation ne coûte rien. La monétisation est pure marge.</p>
+    <div class="plans">
+      <div class="plan-card">
+        <div class="plan-name" style="color:var(--muted)">Free</div>
+        <div class="plan-price">0€ <span>/mois</span></div>
+        <div class="plan-desc">Pour tester</div>
+        <ul class="plan-features">
+          <li>3 adaptations CV / mois</li>
+          <li>Score ATS basique</li>
+          <li>1 template</li>
+          <li>Export PDF watermarké</li>
+        </ul>
+      </div>
+      <div class="plan-card featured">
+        <div class="plan-name" style="color:var(--accent)">Pro</div>
+        <div class="plan-price">9€ <span>/mois</span></div>
+        <div class="plan-desc">Pour chercheurs actifs</div>
+        <ul class="plan-features">
+          <li>Adaptations illimitées</li>
+          <li>Score ATS + suggestions détaillées</li>
+          <li>3 templates premium</li>
+          <li>Export PDF + DOCX</li>
+          <li>Génération LM complète</li>
+          <li>Historique candidatures</li>
+        </ul>
+      </div>
+      <div class="plan-card">
+        <div class="plan-name" style="color:var(--accent2)">Booster</div>
+        <div class="plan-price">19€ <span>/mois</span></div>
+        <div class="plan-desc">Pour accélérer sa recherche</div>
+        <ul class="plan-features">
+          <li>Tout Pro inclus</li>
+          <li>Scraping URL offre</li>
+          <li>Import LinkedIn</li>
+          <li>Dashboard candidatures</li>
+          <li>Multi-langues FR / EN</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <p>MatchCV — Architecture Open Source · Euloge Junior MABIALA · 2026</p>
+    <p style="margin-top:8px; font-size:12px;">Stack : Groq · Mistral · Ollama · sentence-transformers · FastAPI · React · Supabase · Vercel · Railway</p>
+  </footer>
+
+</div>
+</body>
+</html>
