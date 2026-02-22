@@ -1,223 +1,138 @@
-<div align="center">
+# MatchCV 🎯
 
-# MatchCV
+> J'en avais marre de réécrire mon CV à la main pour chaque offre. Alors j'ai codé un truc pour le faire à ma place.
 
-**Plateforme d'adaptation IA de CV — 100% gratuite, open source**
-
-[![Live Demo](https://img.shields.io/badge/Demo-Vercel-black?logo=vercel)](https://cv-adaptateur-v-1.vercel.app)
-[![Backend](https://img.shields.io/badge/API-Railway-purple?logo=railway)](https://cv-adaptateur-v1-production.up.railway.app)
-[![License](https://img.shields.io/badge/licence-MIT-green)](LICENSE)
-[![Made by](https://img.shields.io/badge/par-Euloge%20Junior%20MABIALA-blue)](https://github.com/eulogep)
-
-Upload ton CV · Colle une offre · L'IA adapte tout automatiquement · Export PDF
-
-</div>
+**→ [Voir l'app](https://cv-adaptateur-v-1.vercel.app)** · **[Voir l'API](https://cv-adaptateur-v1-production.up.railway.app/docs)**
 
 ---
 
-## Démonstration
+## C'est quoi ?
 
-🔗 **App live** → [cv-adaptateur-v-1.vercel.app](https://cv-adaptateur-v-1.vercel.app)  
-🔗 **API live** → [cv-adaptateur-v1-production.up.railway.app](https://cv-adaptateur-v1-production.up.railway.app/docs)
+Une app web qui prend ton CV + une offre d'emploi, et qui te sort :
+- Un CV **réécrit et réorganisé** pour cette offre précise
+- Une **lettre de motivation** personnalisée
+- Un **score ATS** pour savoir si tu passeras les filtres RH
+- Les **mots-clés manquants** que les RH recherchent
+- Un **export PDF** propre, prêt à envoyer
 
----
-
-## Fonctionnalités
-
-| Fonctionnalité | Description |
-|---|---|
-| 📄 **Upload CV** | Drag-and-drop PDF ou coller le texte brut |
-| 💼 **Coller l'offre** | Texte complet de l'offre d'emploi |
-| 📊 **Score ATS** | Similarité sémantique CV ↔ offre (0–100) |
-| 🤖 **Adaptation IA** | CV réécrit par LLM (Groq / Mistral / Ollama) |
-| ✉️ **Lettre de motivation** | Générée automatiquement et personnalisée |
-| 🔑 **Mots-clés ATS** | Liste des termes ajoutés pour les filtres RH |
-| ⬇️ **Export PDF** | CV + Lettre de motivation en 2 pages |
-| 🔄 **Fallback LLM** | Groq → Mistral → Ollama automatique |
+Tout ça gratuitement, sans créer de compte, sans payer d'API.
 
 ---
 
-## Stack technique
+## Pourquoi j'ai fait ça
+
+En cherchant mon alternance, j'ai postulé à des dizaines d'offres. À chaque fois, même galère : reformuler les mêmes compétences différemment, mettre certaines choses en avant selon le poste, réécrire la lettre de motivation...
+
+J'ai commencé à utiliser des LLMs pour m'aider, puis j'ai réalisé que je pouvais automatiser tout le process. Donc voilà — j'ai construit MatchCV pendant ma recherche d'alternance, pour ma propre recherche d'alternance. C'est récursif et j'aime ça.
+
+---
+
+## Comment ça marche
 
 ```
-Frontend          Backend              IA & ML
-──────────        ──────────           ──────────────
-React + Vite      FastAPI              Groq (llama-3.3-70b) — principal
-Vanilla CSS       Uvicorn              Mistral AI (mistral-small) — backup
-@react-pdf        PyMuPDF              Ollama (mistral:7b) — local/dev
-lucide-react      python-dotenv        Score ATS keyword-based — 0 coût
-
-Hébergement
-──────────────────
-Frontend → Vercel (gratuit)
-Backend  → Railway.app (gratuit 500h/mois)
+Ton CV (PDF ou texte)
+        +
+Texte de l'offre
+        ↓
+Score ATS calculé localement (0 API = 0 coût)
+        ↓
+LLM qui réécrit ton CV et génère la lettre
+(Groq → Mistral → Ollama selon dispo)
+        ↓
+Export PDF prêt à envoyer
 ```
 
 ---
 
-## Architecture
+## Stack (tout gratuit)
 
-```
-┌──────────────────────────────────────────────────────────┐
-│                    Utilisateur                           │
-│         Upload PDF / Texte CV + Offre d'emploi          │
-└──────────────────┬───────────────────────────────────────┘
-                   │
-         ┌─────────▼────────┐
-         │  React Frontend   │  Vercel
-         │   (Vite + CSS)    │
-         └─────────┬─────────┘
-                   │ fetch
-         ┌─────────▼────────┐
-         │  FastAPI Backend  │  Railway
-         │                  │
-         │  /api/parse-pdf  │ ← PyMuPDF
-         │  /api/score      │ ← Keyword ATS
-         │  /api/adapt      │ ← LLM fallback
-         └──┬─────────────┬─┘
-            │             │
-     ┌──────▼──┐     ┌───▼───────┐
-     │  Groq   │     │  Mistral  │ → Ollama (local)
-     │ LLaMA3  │     │  Small    │
-     └─────────┘     └───────────┘
-```
+**Frontend** — React + Vite, CSS vanilla, déployé sur Vercel
+
+**Backend** — FastAPI Python, déployé sur Railway (500h gratuites/mois)
+
+**IA** — Groq (Llama 3.3 70B) comme LLM principal, Mistral en backup, Ollama en local pour le dev. Si l'un tombe, le suivant prend le relais automatiquement.
+
+**Score ATS** — 100% local, basé sur les keywords, zéro appel API
 
 ---
 
-## Installation locale
+## Lancer le projet en local
 
-### Prérequis
-
-- Python 3.10+
-- Node.js 18+
-- Clé API Groq gratuite → [console.groq.com](https://console.groq.com)
-
-### 1. Cloner le repo
+Tu auras besoin de Python 3.10+, Node.js 18+ et une clé API Groq gratuite (→ [console.groq.com](https://console.groq.com))
 
 ```bash
+# Cloner
 git clone https://github.com/eulogep/cv-adaptateur-v.1.git
 cd cv-adaptateur-v.1
-```
 
-### 2. Backend
-
-```bash
+# Backend
 cd backend
-
-# Créer le fichier .env
 cp .env.example .env
-# Éditer .env et ajouter : GROQ_API_KEY=gsk_...
-
-# Installer les dépendances
+# → coller ta GROQ_API_KEY dans le .env
 pip install -r requirements.txt
-
-# Lancer le serveur
 python3 -m uvicorn main:app --reload --port 8000
-```
 
-→ API disponible sur `http://localhost:8000`  
-→ Documentation Swagger : `http://localhost:8000/docs`
-
-### 3. Frontend
-
-```bash
+# Frontend (dans un autre terminal)
 cd frontend
-
-# Installer les dépendances
 npm install
-
-# Configurer l'URL de l'API
 echo "VITE_API_URL=http://localhost:8000" > .env
-
-# Lancer l'app
 npm run dev
 ```
 
-→ App disponible sur `http://localhost:5173`
+L'app tourne sur `http://localhost:5173` et la doc API sur `http://localhost:8000/docs`.
 
 ---
 
 ## Variables d'environnement
 
-### Backend (`backend/.env`)
+**Backend (`backend/.env`)**
 
-| Variable | Description | Requis |
+| Variable | Quoi | Obligatoire |
 |---|---|---|
-| `GROQ_API_KEY` | Clé API Groq — [console.groq.com](https://console.groq.com) | ✅ |
-| `MISTRAL_API_KEY` | Clé API Mistral (backup LLM) — [console.mistral.ai](https://console.mistral.ai) | ❌ |
-| `OLLAMA_BASE_URL` | URL Ollama local (défaut: `http://localhost:11434`) | ❌ |
+| `GROQ_API_KEY` | Ta clé Groq → [console.groq.com](https://console.groq.com) | ✅ |
+| `MISTRAL_API_KEY` | Backup LLM → [console.mistral.ai](https://console.mistral.ai) | ❌ |
+| `OLLAMA_BASE_URL` | Si tu veux tourner en local (défaut: `http://localhost:11434`) | ❌ |
 
-### Frontend (`frontend/.env`)
+**Frontend (`frontend/.env`)**
 
-| Variable | Description |
+| Variable | Quoi |
 |---|---|
 | `VITE_API_URL` | URL du backend (ex: `http://localhost:8000`) |
 
 ---
 
-## API Reference
+## API — les 3 endpoints
 
-### `GET /`
-Health check.
+**`POST /api/parse-pdf`** — Extrait le texte d'un PDF
 ```json
-{"status": "ok", "message": "MatchCV API v1.0 — 100% gratuit 🚀"}
-```
-
-### `POST /api/parse-pdf`
-Extrait le texte d'un PDF uploadé.
-```
-Content-Type: multipart/form-data
-Body: file (PDF, max 10MB)
-```
-```json
-{"text": "...", "chars": 1842}
+// Body: multipart/form-data, champ "file" (PDF max 10MB)
+// Réponse:
+{ "text": "...", "chars": 1842 }
 ```
 
-### `POST /api/score`
-Calcule le score ATS entre le CV et l'offre.
+**`POST /api/score`** — Score ATS CV vs offre
 ```json
-{"cv_text": "...", "offer_text": "..."}
-```
-```json
-{"score": 78, "level": "Bon", "color": "#FBBF24", "advice": "..."}
+// Body:
+{ "cv_text": "...", "offer_text": "..." }
+// Réponse:
+{ "score": 78, "level": "Bon", "advice": "..." }
 ```
 
-### `POST /api/adapt`
-Adapte le CV par LLM avec fallback automatique.
+**`POST /api/adapt`** — Le cœur — adaptation par LLM
 ```json
-{"cv_text": "...", "offer_text": "..."}
-```
-```json
+// Body:
+{ "cv_text": "...", "offer_text": "..." }
+// Réponse:
 {
-  "nom": "Euloge Junior MABIALA",
-  "titre": "Développeur Python IA",
+  "titre": "Data Scientist IA",
   "resume": "...",
+  "competences": { "techniques": [...], "soft_skills": [...] },
   "experiences": [...],
-  "competences": {"techniques": [...], "soft_skills": [...]},
-  "formation": [...],
   "lettre_motivation": "...",
   "mots_cles_ajoutes": [...],
-  "score_amelioration": 15,
   "_provider": "Groq (llama-3.3-70b)"
 }
 ```
-
----
-
-## Déploiement
-
-### Backend → Railway
-
-1. Connecter le repo GitHub à [railway.app](https://railway.app)
-2. **Root Directory** → `backend`
-3. **Public Networking** → port `8000`
-4. **Variables** → ajouter `GROQ_API_KEY`
-
-### Frontend → Vercel
-
-1. Importer le repo sur [vercel.com](https://vercel.com)
-2. **Root Directory** → `frontend` | **Framework** → `Vite`
-3. **Environment Variables** → `VITE_API_URL=https://[ton-app].railway.app`
 
 ---
 
@@ -226,51 +141,57 @@ Adapte le CV par LLM avec fallback automatique.
 ```
 cv-adaptateur-v.1/
 ├── backend/
-│   ├── main.py           # Routes FastAPI
-│   ├── llm.py            # LLM fallback chain
-│   ├── ats_score.py      # Score ATS keyword-based
-│   ├── pdf_parser.py     # Extraction texte PDF
-│   ├── requirements.txt
-│   ├── Procfile          # Railway
-│   ├── railway.json      # Railway config
-│   ├── nixpacks.toml     # Railway build config
-│   └── .env.example
+│   ├── main.py          # Routes FastAPI
+│   ├── llm.py           # Fallback chain Groq → Mistral → Ollama
+│   ├── ats_score.py     # Score ATS sans API
+│   ├── pdf_parser.py    # Extraction texte PDF
+│   └── requirements.txt
+│
 ├── frontend/
-│   ├── src/
-│   │   ├── App.jsx           # Orchestrateur principal
-│   │   ├── index.css         # Design system dark
-│   │   └── components/
-│   │       ├── CVInput.jsx   # Upload PDF / textarea
-│   │       ├── ATSGauge.jsx  # Jauge SVG animée
-│   │       ├── CVResult.jsx  # Résultat avec onglets
-│   │       ├── PDFExport.jsx # Export @react-pdf
-│   │       └── Loader.jsx    # Animation de chargement
-│   ├── vercel.json
-│   └── package.json
-├── index.html            # Documentation architecture
-├── .gitignore
+│   └── src/
+│       ├── App.jsx
+│       └── components/
+│           ├── CVInput.jsx    # Upload PDF / textarea
+│           ├── ATSGauge.jsx   # Jauge SVG animée
+│           ├── CVResult.jsx   # Résultat avec onglets
+│           ├── PDFExport.jsx  # Export @react-pdf
+│           └── Loader.jsx
+│
 └── README.md
 ```
 
 ---
 
-## Providers LLM gratuits
+## Ce que j'ai appris en le faisant
 
-| Provider | Modèle | Limite gratuite | Usage |
-|---|---|---|---|
-| **Groq** | llama-3.3-70b-versatile | 14 400 req/jour | Principal |
-| **Mistral AI** | mistral-small-latest | 1B tokens/mois | Backup |
-| **Ollama** | mistral:7b-instruct | Illimitée (local) | Dev/tests |
-
----
-
-## Auteur
-
-**Euloge Junior MABIALA** · 2026  
-[GitHub](https://github.com/eulogep) · [LinkedIn](https://linkedin.com/in/eulogemabiala)
+- Gérer un fallback entre plusieurs providers LLM proprement
+- Déployer une API FastAPI sur Railway avec nixpacks
+- Parser des PDFs en Python sans perdre le formatage
+- Générer des PDFs côté client avec `@react-pdf/renderer`
+- Que le plus dur dans un side project c'est pas le code — c'est de finir
 
 ---
 
-<div align="center">
-  <sub>Built with ❤️ · 100% open source · Zéro coût infrastructure</sub>
-</div>
+## Ce qui viendra après (si j'ai le temps)
+
+- [ ] Upload PDF sans copier-coller
+- [ ] Historique des candidatures
+- [ ] Scraping URL d'offre directement
+- [ ] 2-3 templates de CV différents
+- [ ] Mode mobile propre
+
+---
+
+## Providers LLM utilisés
+
+| Provider | Modèle | Limite gratuite |
+|---|---|---|
+| Groq | llama-3.3-70b-versatile | 14 400 req/jour |
+| Mistral AI | mistral-small-latest | 1 milliard tokens/mois |
+| Ollama | mistral:7b-instruct | Illimitée (local) |
+
+---
+
+Fait par **Euloge Junior MABIALA** — étudiant en 3ème année à l'ESIEA Paris, en recherche d'alternance Data Science & IA pour septembre 2026.
+
+[GitHub](https://github.com/eulogep) · [Portfolio](https://eulogep.github.io/portefolio_new/)
